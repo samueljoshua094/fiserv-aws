@@ -7,9 +7,9 @@ import boto3
 
 print("Getting Values from environment variable")
 try:
-    DYNAMO_TABLE_NAME = os.getenv('DYNAMO_TABLE_NAME')
+    DYNAMO_TABLE_NAME = os.getenv('DYNAMO_TABLE_NAME', "TransactionProcess")
     SNS_TOPIC_ARN = os.getenv('SNS_TOPIC_ARN')
-    ERROR_BUCKET = os.getenv('ERROR_BUCKET')
+    ERROR_BUCKET = os.getenv('ERROR_BUCKET', "transferprocessfail")
 except Exception as error:
     print("Exception occurred while getting environment variable" + error)
 
@@ -40,7 +40,7 @@ def lambda_handler(event, context):
             print("Sending notification message in mail")
             aws_utility.send_sns_message(SNS_TOPIC_ARN, constants.FAILED_SNS_SUBJECT, error_message)
             dynamo_data = {'id': start_time, 'EndTime': end_time, 'FileName': file_name, 'Status': 'Failure',
-                           'FailureReason': str(e), 'ErrorPhase': 'Summarizing transaction and inserting to RDS'}
+                           'FailureReason': str(e), 'ErrorPhase': 'Summarizing transaction and inserting to DynamoDb'}
 
             print("Uploading fail message in DynamoDB")
             aws_utility.upload_to_dynamo(DYNAMO_TABLE_NAME, dynamo_data)

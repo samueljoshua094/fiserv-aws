@@ -5,10 +5,10 @@ import os
 from botocore.exceptions import ClientError
 
 try:
-    DYNAMO_TABLE_NAME1 = os.getenv('DYNAMO_TABLE_NAME1')
+    DYNAMO_TABLE_NAME1 = os.getenv('DYNAMO_TABLE_NAME1', "product")
     REGION_NAME = os.getenv('REGION_NAME')
 except Exception as error:
-    print("Exception occurred while getting environment variable" + error)
+    print("Exception occurred while getting environment variable", error)
 
 
 def delete_s3_file(bucket, key):
@@ -87,15 +87,16 @@ def save_file_csv(bucket_name, file_name):
     except Exception as e:
         raise Exception(e)
 
-    def transfer_file(source_bucket,
-                      destination_bucket, filename):
-        try:
-            s3_resource = boto3.resource('s3')
-            source = {
-                'Bucket': source_bucket,
-                'Key': filename
-            }
-            s3_resource.meta.client.copy(source, destination_bucket, filename)
-        except ClientError as e:
-            print(e)
-            raise Exception(e)
+
+def transfer_file(source_bucket,
+                  destination_bucket, filename):
+    try:
+        s3_resource = boto3.resource('s3')
+        source = {
+            'Bucket': source_bucket,
+            'Key': filename
+        }
+        s3_resource.meta.client.copy(source, destination_bucket, filename)
+    except ClientError as e:
+        print(e)
+        raise Exception(e)
