@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  fiserv-aws
+
+  Sample SAM Template for fiserv-aws
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+    Tracing: Active
+
+Resources:
+  TransactionProcessFile:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: hello_world/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          DYNAMO_TABLE_NAME: !Ref TransactionTable
+          DYNAMO_TABLE_NAME1: !Ref ProductTable
+          ERROR_BUCKET: !Ref FileFailBucket
+          REGION_NAME: !Ref AWS::Region  
+          SNS_TOPIC_ARN: !Ref SnsTransaction
+      Events:
+        FileUpload:
+          Type: S3
+          Properties:
+            Bucket : !Ref FileProcessBucket
+            Events : s3:ObjectCreated:*
+
+      Policies:
+        - DynamoDBWritePolicy:
+           TableName:  product
+        - DynamoDBWritePolicy:
+            TableName: TransactionProcess
+        - SNSPublishMessagePolicy:
+            TopicName: Transactionsns               
+        - S3CrudPolicy:
+            BucketName: transferprocess
+        - S3CrudPolicy:
+            BucketName: transferprocessfail
+  FileProcessBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: transferprocess
+  FileFailBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: transferprocessfail 
+  ProductTable:
+      Type: AWS::Serverless::SimpleTable
+      Properties:
+        PrimaryKey: 
+             Name: id
+             Type: Number
+        TableName: product 
+        ProvisionedThroughput:
+             ReadCapacityUnits: 2
+             WriteCapacityUnits: 2
+  TransactionTable:
+      Type: AWS::Serverless::SimpleTable
+      Properties:
+        PrimaryKey: 
+             Name: id
+             Type: String
+        TableName: TransactionProcess
+        ProvisionedThroughput:
+             ReadCapacityUnits: 2
+             WriteCapacityUnits: 2   
+  SnsTransaction:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: Transactionsns
+  MySubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Endpoint: samjoshua094@gmail.com
+        Protocol: email
+        TopicArn: !Ref 'SnsTransaction'                                    
+
+
